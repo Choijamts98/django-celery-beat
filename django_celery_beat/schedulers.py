@@ -136,13 +136,22 @@ class ModelEntry(ScheduleEntry):
         return self.schedule.is_due(last_run_at_in_tz)
 
     def _default_now(self):
-        if getattr(settings, 'DJANGO_CELERY_BEAT_TZ_AWARE', True):
-            now = datetime.datetime.now(self.app.timezone)
+        now = self.app.now()
+
+        if is_aware(now):
+
+            return now.replace(tzinfo=None)  
+        
         else:
-            # this ends up getting passed to maybe_make_aware, which expects
-            # all naive datetime objects to be in utc time.
-            now = datetime.datetime.utcnow()
-        return now
+
+            return now
+        # if getattr(settings, 'DJANGO_CELERY_BEAT_TZ_AWARE', True):
+        #     now = datetime.datetime.now(self.app.timezone)
+        # else:
+        #     # this ends up getting passed to maybe_make_aware, which expects
+        #     # all naive datetime objects to be in utc time.
+        #     now = datetime.datetime.utcnow()
+        # return now
 
     def __next__(self):
         self.model.last_run_at = self._default_now()

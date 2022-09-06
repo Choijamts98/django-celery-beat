@@ -27,6 +27,13 @@ def make_aware(value):
             value = timezone.make_aware(value, timezone.get_default_timezone())
     return value
 
+    if not getattr(settings,'CELERY_ENABLE_UTC', True):
+        if timezone.is_naive(value):
+            value = value
+        else:
+            value = timezone.make_naive(value)
+    return value
+
 
 def now():
     """Return the current date and time."""
