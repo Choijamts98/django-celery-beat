@@ -25,7 +25,6 @@ def make_aware(value):
         # naive datetimes are assumed to be in local timezone.
         if timezone.is_naive(value):
             value = timezone.make_aware(value, timezone.get_default_timezone())
-    return value
 
     if not getattr(settings,'CELERY_ENABLE_UTC', True):
         if timezone.is_naive(value):
