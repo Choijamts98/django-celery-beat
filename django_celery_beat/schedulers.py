@@ -137,13 +137,11 @@ class ModelEntry(ScheduleEntry):
 
     def _default_now(self):
         now = self.app.now()
-
-        if is_aware(now):
+        from django.utils import timezone
+        if timezone.is_aware(now):
 
             return now.replace(tzinfo=None)  
-        
         else:
-
             return now
         # if getattr(settings, 'DJANGO_CELERY_BEAT_TZ_AWARE', True):
         #     now = datetime.datetime.now(self.app.timezone)
