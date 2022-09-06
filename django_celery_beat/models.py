@@ -1,8 +1,4 @@
 """Database models."""
-try:
-    from zoneinfo import available_timezones
-except ImportError:
-    from backports.zoneinfo import available_timezones
 from datetime import timedelta
 
 import timezone_field
@@ -61,26 +57,26 @@ def cronexp(field):
 
 
 def crontab_schedule_celery_timezone():
-    """Return timezone string from Django settings ``CELERY_TIMEZONE`` variable.
+    """Return timezone string from Django settings `CELERY_TIMEZONE` variable.
 
-    If is not defined or is not a valid timezone, return ``"UTC"`` instead.
+    If is not defined or is not a valid timezone, return `"UTC"` instead.
     """
     try:
         CELERY_TIMEZONE = getattr(
             settings, '%s_TIMEZONE' % current_app.namespace)
     except AttributeError:
         return 'UTC'
-    if CELERY_TIMEZONE in available_timezones():
-        return CELERY_TIMEZONE
-    return 'UTC'
+    return CELERY_TIMEZONE if CELERY_TIMEZONE in [
+        choice[0].zone for choice in timezone_field.
+        TimeZoneField.default_choices
+    ] else 'UTC'
 
 
 class SolarSchedule(models.Model):
     """Schedule following astronomical patterns.
 
     Example: to run every sunrise in New York City:
-
-    >>> event='sunrise', latitude=40.7128, longitude=74.0060
+    event='sunrise', latitude=40.7128, longitude=74.0060
     """
 
     event = models.CharField(
@@ -140,9 +136,8 @@ class SolarSchedule(models.Model):
 class IntervalSchedule(models.Model):
     """Schedule executing on a regular interval.
 
-    Example: execute every 2 days:
-
-    >>> every=2, period=DAYS
+    Example: execute every 2 days
+    every=2, period=DAYS
     """
 
     DAYS = DAYS
@@ -225,7 +220,7 @@ class ClockedSchedule(models.Model):
         ordering = ['clocked_time']
 
     def __str__(self):
-        return '{}'.format(make_aware(self.clocked_time))
+        return '{}'.format(self.clocked_time)
 
     @property
     def schedule(self):
@@ -246,10 +241,9 @@ class ClockedSchedule(models.Model):
 class CrontabSchedule(models.Model):
     """Timezone Aware Crontab-like schedule.
 
-    Example:  Run every hour at 0 minutes for days of month 10-15:
-
-    >>> minute="0", hour="*", day_of_week="*",
-    ... day_of_month="10-15", month_of_year="*"
+    Example:  Run every hour at 0 minutes for days of month 10-15
+    minute="0", hour="*", day_of_week="*",
+    day_of_month="10-15", month_of_year="*"
     """
 
     #
@@ -300,7 +294,6 @@ class CrontabSchedule(models.Model):
 
     timezone = timezone_field.TimeZoneField(
         default=crontab_schedule_celery_timezone,
-        use_pytz=False,
         verbose_name=_('Cron Timezone'),
         help_text=_(
             'Timezone to Run the Cron Schedule on. Default is UTC.'),
@@ -361,8 +354,8 @@ class CrontabSchedule(models.Model):
 class PeriodicTasks(models.Model):
     """Helper table for tracking updates to periodic tasks.
 
-    This stores a single row with ``ident=1``. ``last_update`` is updated via
-    signals whenever anything changes in the :class:`~.PeriodicTask` model.
+    This stores a single row with ident=1.  last_update is updated
+    via django signals whenever anything is changed in the PeriodicTask model.
     Basically this acts like a DB data audit trigger.
     Doing this so we also track deletions, and not just insert/update.
     """

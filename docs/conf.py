@@ -22,17 +22,4 @@ globals().update(conf.build_config(
         'django_celery_beat.apps',
         r'django_celery_beat.migrations.*',
     ],
-    extlinks={
-      'github_project': (
-        'https://github.com/%s',
-        'GitHub project %s',
-      ),
-      'github_pr': (
-        'https://github.com/celery/django-celery-beat/pull/%s',
-        'GitHub PR #%s',
-      ),
-    },
-    extra_intersphinx_mapping={
-        'django-celery-results': ('https://django-celery-results.readthedocs.io/en/latest/', None),
-    },
 ))

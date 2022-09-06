@@ -1,7 +1,7 @@
 PROJ=django_celery_beat
 PGPIDENT="Celery Security Team"
 PYTHON=python
-PYTEST=pytest
+PYTEST=py.test
 GIT=git
 TOX=tox
 ICONV=iconv

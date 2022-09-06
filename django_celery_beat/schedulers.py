@@ -85,7 +85,6 @@ class ModelEntry(ScheduleEntry):
             self.options['expires'] = getattr(model, 'expires_')
 
         self.options['headers'] = loads(model.headers or '{}')
-        self.options['periodic_task_name'] = model.name
 
         self.total_run_count = model.total_run_count
         self.model = model
@@ -136,8 +135,12 @@ class ModelEntry(ScheduleEntry):
         return self.schedule.is_due(last_run_at_in_tz)
 
     def _default_now(self):
+        # The PyTZ datetime must be localised for the Django-Celery-Beat
+        # scheduler to work. Keep in mind that timezone arithmatic
+        # with a localized timezone may be inaccurate.
         if getattr(settings, 'DJANGO_CELERY_BEAT_TZ_AWARE', True):
-            now = datetime.datetime.now(self.app.timezone)
+            now = self.app.now()
+            now = now.tzinfo.localize(now.replace(tzinfo=None))
         else:
             # this ends up getting passed to maybe_make_aware, which expects
             # all naive datetime objects to be in utc time.

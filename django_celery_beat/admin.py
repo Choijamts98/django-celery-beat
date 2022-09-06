@@ -147,7 +147,7 @@ class PeriodicTaskAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        scheduler = getattr(settings, 'CELERYBEAT_SCHEDULER', None)
+        scheduler = getattr(settings, 'CELERY_BEAT_SCHEDULER', None)
         extra_context['wrong_scheduler'] = not is_database_scheduler(scheduler)
         return super(PeriodicTaskAdmin, self).changelist_view(
             request, extra_context)
@@ -179,7 +179,7 @@ class PeriodicTaskAdmin(admin.ModelAdmin):
     enable_tasks.short_description = _('Enable selected tasks')
 
     def disable_tasks(self, request, queryset):
-        rows_updated = queryset.update(enabled=False, last_run_at=None)
+        rows_updated = queryset.update(enabled=False)
         PeriodicTasks.update_changed()
         self._message_user_about_update(request, rows_updated, 'disabled')
     disable_tasks.short_description = _('Disable selected tasks')
@@ -201,8 +201,7 @@ class PeriodicTaskAdmin(admin.ModelAdmin):
         tasks = [(self.celery_app.tasks.get(task.task),
                   loads(task.args),
                   loads(task.kwargs),
-                  task.queue,
-                  task.name)
+                  task.queue)
                  for task in queryset]
 
         if any(t[0] is None for t in tasks):
@@ -220,14 +219,10 @@ class PeriodicTaskAdmin(admin.ModelAdmin):
             )
             return
 
-        task_ids = [
-            task.apply_async(args=args, kwargs=kwargs, queue=queue,
-                             periodic_task_name=periodic_task_name)
-            if queue and len(queue)
-            else task.apply_async(args=args, kwargs=kwargs,
-                                  periodic_task_name=periodic_task_name)
-            for task, args, kwargs, queue, periodic_task_name in tasks
-        ]
+        task_ids = [task.apply_async(args=args, kwargs=kwargs, queue=queue)
+                    if queue and len(queue)
+                    else task.apply_async(args=args, kwargs=kwargs)
+                    for task, args, kwargs, queue in tasks]
         tasks_run = len(task_ids)
         self.message_user(
             request,
